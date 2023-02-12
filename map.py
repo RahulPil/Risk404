@@ -69,7 +69,7 @@ class Map:
         # amount of territory to be aloted per player
         territoryPerPlayer = 19 // self.playerCount
 
-        for i in self.playerCount:
+        for i in range(self.playerCount):
             tempTPP = territoryPerPlayer
 
             # iterates through the listOfCountries
@@ -77,18 +77,17 @@ class Map:
                 # gets the player# and the number of troops on the territory
                 territoryStats = self.listOfCountries.get(key)
                 playerNumber = territoryStats[0]
-
-                if playerNumber == 0:
+                if playerNumber == 0 and tempTPP > 0:
                     playerNumber = i + 1
                     tempTPP = tempTPP - 1
                     territoryStats[0] = playerNumber
                     # updates the player associated with the terrirtory
-                    self.listOfCountries.update(key, territoryStats)
+                    self.listOfCountries[key] = territoryStats
 
     # conqueres territory per player
     def conquerTerritory(self, territoryName, playerNumber, numberOfTroops):
         newTerritoryStats = [playerNumber, numberOfTroops]
-        self.listOfCountries.update(territoryName, newTerritoryStats)
+        self.listOfCountries[territoryName] = newTerritoryStats
 
     # checks if territory can be conquered per player
     def canBeConquered(self, territoryName, playerNumber):
@@ -106,24 +105,61 @@ class Map:
         # iterates through the listOfCountries
         tempCountryList = []
         for key in self.listOfCountries:
-            tempPlayerNumber = self.listOfCountries.get(key)
+            tempPlayerNumber = self.listOfCountries.get(key)[0]
             # if the playernumber with territory is assocated w/ the player number it's added to the list
             if (tempPlayerNumber == playerNumber):
-                tempCountryList.insert(key)
+                tempCountryList.append(key)
         return tempCountryList
 
     # get's all the territory that isn't owned by a player
-    def getCountryList(self, playerNumber):
+    def getNoneCountryList(self, playerNumber):
         # iterates through the listOfCountries
         tempCountryList = []
         for key in self.listOfCountries:
             tempPlayerNumber = self.listOfCountries.get(key)
             # if the playernumber with territory is assocated w/ the player number it's added to the list
             if (tempPlayerNumber != playerNumber):
-                tempCountryList.insert(key)
+                tempCountryList.append(key)
         return tempCountryList
 
     # place troops on territory
     def placeTroops(self, territoryName, playerNumber, amountOfTroops):
         newTerritoryStat = [playerNumber, amountOfTroops]
-        self.listOfCountries.update(territoryName, newTerritoryStat)
+        self.listOfCountries[territoryName] = newTerritoryStat
+
+def main():
+    mainMap = Map(2)
+    mainMap.intializeMap()
+    print("The intializiation of the map has finished")
+
+    print("User 1's territories")
+    print(mainMap.getCountryList(1))
+
+    print("\n")
+
+    print("User 2's territories")
+    print(mainMap.getCountryList(2))
+
+    print("\n")
+
+    print("User 2 will conquer the United Kingdom")
+    mainMap.conquerTerritory('United Kingdom', 2, 0)
+    print("User 1's territories")
+    print(mainMap.getCountryList(1))
+
+    print("\n")
+
+    print("User 2's territories")
+    print(mainMap.getCountryList(2))
+
+    print("User 1 will try to conquer territory that can't be conqured")
+    if (mainMap.canBeConquered("Middle East", 1)):
+        mainMap.conquerTerritory("Middle East", 1, 0)
+        print("Success")
+    else:
+        print("Can't be conquered")
+
+
+
+if __name__ == "__main__":
+         main()
