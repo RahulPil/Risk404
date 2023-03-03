@@ -1,80 +1,58 @@
 import socket
-import select
+import threading
+from _thread import*
+import random
+import pickle
 
-# first thread accepts connections and send them to another thread that takes
-# care of which game session the user wants to enter
+global gameID
 
-# both of the below ds are gonna be global
-# we have a dictionary that carries a game id as key and a set of client username
-# dictionary that maps username to client
+print_lock = threading.Lock()
+server_port = 5176
+server_name = 'csslab8.uwb.edu'
 
-#Thread that takes care of joining game session (MAIN EVENT LOOP):
-    # asks if there is a created game id or create a new game id
-    # if create a new game id then add a new game id to the dictionary
-    # and append client username to said value of the new game id key in the dictionary
-    # otherwise just add the client's username to said dictionary under the key
-    # that is provided
+# begins the creation of the socket, binds it, then waits for
+# incomming connections
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((server_name, server_port))
+server_socket.listen()
 
+def main_event_loop(connectionSocket):
+    # ask for username?
+    run = True
+    while run: 
+        connectionSocket.send('Options:\nEnter 1 for creating a new session\nEnter 2 for an existing game session\nEnter 3 to quit'.encode('ascii'))
+        action = int(connectionSocket.recv(1024).decode('ascii'))
 
+        if action == 1:
+            #create a new gameID
+            game_Sess = random.randint(1, 101)
+            gameID[game_Sess] = connectionSocket
+            connectionSocket.send(f'Game Host: {game_Sess}'.encode('ascii'))
+            # must create thread so that client doesnt get bombarded with messages
+            
+        elif action == 2:
+            # join an existing game
+            connectionSocket.send(f'Valid game sessions: {gameID.keys()}'.encode('ascii'))
+            chosen_game_sess = int(connectionSocket.recv(1024).decode('ascii'))
+            host_client_info = pickle.dumps(gameID[chosen_game_sess])
+            connectionSocket.send(host_client_info.encode('ascii'))
+            # must create thread so that client doesnt get bombarded with messages 
 
+        elif action == 3:
+            # break connection and set run = false
+            run = False
+            
+    print_lock.release()
 
-# header_length = 10
-# port = 5176
-# ip = "csslab8.uwb.edu"
-#
-# server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-#
-# server_socket.bind((ip, port))
-#
-# server_socket.listen()
-#
-# sockets_list = [server_socket]
-#
-# clients = {}
-#
-# def receive_message(client_socket):
-#     try:
-#         message_header = client_socket.recv(header_length)
-#         if not len(message_header):
-#             return False
-#         message_length = int(message_header.decode("utf-8").strip())
-#         return("header" : message_header, "data" : client_socket.recv(message_length))
-#     except:
-#         return False
-#
-# while True:
-#     read_sockets, _, exception_sockets = select.select(sockets_list, [], sockets_list)
-#
-#     for notified_socket in read_sockets:
-#         if notified_socket == server_socket:
-#             client_socket, client_address = server_socket.accept()
-#
-#             user = receive_message(client_socket)
-#             if user is False:
-#                 continue
-#
-#             sockets_list.append(client_socket)
-#
-#             clients[client_socket] = user
-#
-#             print(f"Accepted new connection from {client_address[0]}:{client_address[1]} username:{user['data'].decode('utf-8')}")
-#
-#         else:
-#             message - recieve_message(notified_socket)
-#             if message is False:
-#                 print(f"closed connection from {clients[notified_socket]['data'].decode('utf-8')}")
-#                 sockets_list.remove(notified_socket)
-#                 del clients[notified_socket]
-#                 continue
-#
-#             user = clients[notified_socket]
-#             print(f"Recieved message from {user['data'].decode('utf-8')}:{message['data'].decode('utf-8')}")
-#
-#             for client_socket in clients:
-#                 if client_socket is notified_socket"
-#                 client_socket.send(user['header'] + user['data'] +message['header'] + message['data'])
-#
-#     for notified_socket in exception_sockets:
-#         sockets_list.remove(notified_socket)
-#         del clients[notified_socket]
+# if there is a connection, a new thread is created
+# it will go to the main_event_loop which will interpert the request from the TCP sender
+while True:
+    connectionSocket, addr = server_socket.accept()
+    main_event = threading.tHREAD(target=main_event_loop, args=(connectionSocket,))
+
+    # get's new lock, will be used by threads for a gracefull exits
+    print_lock.acquire()
+    start_new_thread(main_event_loop, (connectionSocket, ))
+
+# closes connection
+server_socket.close()

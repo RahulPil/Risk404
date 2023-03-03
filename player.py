@@ -26,6 +26,10 @@ class Player:
     # adds to the solider count
     def addSoliders(self, count):
         self.setSoliderCount = self.soliderCount + count
+    
+    # add soliders to territory
+    def placeSoliders(self, territory_name, soilder_amount):
+        return self.mapView.placeTroops(territory_name, self.id, soilder_amount)
         
     # list all territories controled by the player
     # this method encapsulates the getPlayerTerritoryList in the map.py object

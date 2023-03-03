@@ -62,6 +62,8 @@ class Map:
         
         # defines the amount of players
         self.playerCount = playerCount
+
+        35 - 5
     
 
 
@@ -165,8 +167,11 @@ class Map:
 
     # place troops on territory
     def placeTroops(self, territoryName, playerNumber, amountOfTroops):
-        newTerritoryStat = [playerNumber, amountOfTroops]
-        self.listOfTerritories[territoryName] = newTerritoryStat
+        if self.listOfTerritories.get(territoryName)[0] == playerNumber:
+            newTerritoryStat = [playerNumber, amountOfTroops]
+            self.listOfTerritories[territoryName] = newTerritoryStat
+            return True
+        return False
 
     # checks if one player controls all the territories
     def oneWinner(self):
