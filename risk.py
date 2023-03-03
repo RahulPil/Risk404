@@ -107,5 +107,17 @@ def playerTests():
     print(f'Player2:\n{player2.listTerritories()}\n')
 
 
+    # player 2 reconquers territory
+    player2.conquerTerritory("North Africa", 50)
+    print("Player 2 should have North Africa, but not Player 1")
+    print(f'Player1:\n{player1.listTerritories()}\n')
+    print(f'Player2:\n{player2.listTerritories()}\n')
+
+    # player 1 should now have updated map
+    player1.receiveNewMap(player2.sendMap())
+    print(f'Player1:\n{player1.listTerritories()}\n')
+    print(f'Player2:\n{player2.listTerritories()}\n')
+
+
 if __name__ == "__main__":
     main()
