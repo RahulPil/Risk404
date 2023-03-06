@@ -72,6 +72,12 @@ class Map:
         # amount of territory to be aloted per player
         territoryPerPlayer = 19 // self.playerCount
 
+        amountOfTroops = 35
+        tempPlayerCount = self.playerCount
+        while (tempPlayerCount > 3):
+            amountOfTroops = amountOfTroops - 5
+            tempPlayerCount = tempPlayerCount - 1
+
         for i in range(self.playerCount):
             tempTPP = territoryPerPlayer
 
@@ -84,21 +90,17 @@ class Map:
                     playerNumber = i + 1
                     tempTPP = tempTPP - 1
                     territoryStats[0] = playerNumber
+                    territoryStats[1] = 1
                     # updates the player associated with the terrirtory
                     self.listOfTerritories[key] = territoryStats
 
         # if there is remaining territory it goes to plyaer 1
         for key in self.listOfTerritories:
             if self.listOfTerritories.get(key)[0] == 0:
-                self.listOfTerritories.update({key: [1, 0]})
-
-    # conqueres territory per player
-    def conquerTerritory(self, territoryName, playerNumber, numberOfTroops):
-        newTerritoryStats = [playerNumber, numberOfTroops]
-        self.listOfTerritories[territoryName] = newTerritoryStats
+                self.listOfTerritories.update({key: [1, 1]})
 
     # checks if territory can be conquered per player
-    def canBeConquered(self, territoryName, playerNumber):
+    def canBeAttacked(self, territoryName, playerNumber):
         tempTerritoryList = self.getPlayerTerritoryList(playerNumber)
 
         # iterates through the player's countries
@@ -119,7 +121,7 @@ class Map:
                 tempterritoryList.append(key)
         return tempterritoryList
 
-    # returns a list of a players countries w/ solider count
+    # returns a list of a players countries w/ Troop count
     def getPlayerSoldierList(self, playerNumber):
         # iterates through the listOfCountries
         tempterritoryList = []
@@ -128,33 +130,28 @@ class Map:
             # if the playernumber with territory is assocated w/ the player number it's added to the list
             if (tempPlayerNumber == playerNumber):
                 territoryName = key
-                soldierCount = self.listOfTerritories.get(key)[1]
-                territoryInfo = [territoryName, soldierCount]
+                troopCount = self.listOfTerritories.get(key)[1]
+                territoryInfo = [territoryName, troopCount]
                 tempterritoryList.append(territoryInfo)
         return tempterritoryList
+    
+    # returns the amount of Troops on a peice of territory
+    def getTroopCount(self, territory):
+        return self.listOfTerritories.get(territory)[1]
 
     # returns a matrix, where each row is the territory, the player who has that territory, and
-    # the amount of soliders on that territory
+    # the amount of Troops on that territory
     def getMap(self):
         entireMap = []
         for key in self.listOfTerritories:
             territoryName = key
             playerNumer = self.listOfTerritories.get(key)[0]
-            amountOfSolider = self.listOfTerritories.get(key)[1]
-            territory = [territoryName, playerNumer, amountOfSolider]
+            amountOfTroop = self.listOfTerritories.get(key)[1]
+            territory = [territoryName, playerNumer, amountOfTroop]
             entireMap.append(territory)
         return entireMap
 
-    # returns the amount of soliders on a territory
-    def getCountySoliderCount(self, territory):
-        if (territory in self.listOfTerritories):
-            territoryInfo = self.listOfTerritories.get(territory)
-            return territoryInfo[1]
-        else:
-            return -1
-
     # get's all the territory that isn't owned by a player
-
     def getNoneTerritoryList(self, playerNumber):
         # iterates through the listOfCountries
         tempterritoryList = []
@@ -165,13 +162,13 @@ class Map:
                 tempterritoryList.append(key)
         return tempterritoryList
 
-    # place troops on territory
-    def placeTroops(self, territoryName, playerNumber, amountOfTroops):
-        if self.listOfTerritories.get(territoryName)[0] == playerNumber:
-            newTerritoryStat = [playerNumber, amountOfTroops]
-            self.listOfTerritories[territoryName] = newTerritoryStat
-            return True
-        return False
+    # returns bordering territories
+    def getBorders(self, territories):
+        return self.gameMap.get(territories)
+    
+    # returns true/false if one territory is a border of another
+    def isBorder(self, territory1, territory2):
+        return territory2 in self.gameMap.get(territory1) 
 
     # checks if one player controls all the territories
     def oneWinner(self):

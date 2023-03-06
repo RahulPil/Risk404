@@ -10,51 +10,121 @@ import random
 import copy
 from map import Map
 
+
 class Player:
     # intalizes the name of the player, their name, & their ID (1, 2, 3, etc.)
     # it also intailzes them to a map
-    def __init__(self, newName, newNumber, newMap : Map):
+    def __init__(self, newName, newNumber, newMap: Map):
         self.name = newName
         self.id = newNumber
-        self.soliderCount = 0
+        self.TroopCount = 0
         self.mapView = copy.deepcopy(newMap)
-    
-    # sets the initial solider count
-    def setSoliderCount(self, count):
-        self.soliderCount = count
-    
-    # adds to the solider count
-    def addSoliders(self, count):
-        self.setSoliderCount = self.soliderCount + count
-    
-    # add soliders to territory
-    def placeSoliders(self, territory_name, soilder_amount):
-        return self.mapView.placeTroops(territory_name, self.id, soilder_amount)
-        
+
+    # sets the initial Troop count
+    def setTroopCount(self, count):
+        self.TroopCount = count
+
+    # adds to the Troop count
+    def addTroopCount(self, count):
+        self.setTroopCount = self.TroopCount + count
+
     # list all territories controled by the player
     # this method encapsulates the getPlayerTerritoryList in the map.py object
-    def listTerritories(self) :
+    def listTerritories(self):
         return self.mapView.getPlayerTerritoryList(self.id)
 
-    # list all territories controled by the player, with solider count
-    # this methid encapsulates the getCountySoliderCount in the map.py object 
-    def getSoliderTerritories(self) :
-        return self.mapView.getCountySoliderCount(self.id)
-    
-    # conquers the territory based on the territioryName & assighns soliders for
-    # that territory
-    def conquerTerritory(self, territoryName, soliderCount):
+    # list all territories controled by the player, with Troop count
+    # this methid encapsulates the getCountyTroopCount in the map.py object
+    def getTroopTerritories(self):
+        return self.mapView.getPlayerSoldierList(self.id)
+
+    # playes out a battle sequence
+    def battle(self, attackTerritory, defendTerritory, diceAmount):
         # checks if the territory can be conquered
-        if (self.mapView.canBeConquered(territoryName, self.id) == False) :
+        if (self.mapView.canBeAttacked(defendTerritory, self.id) == False or self.mapView.isBorder(attackTerritory, defendTerritory) == False):
             return False
-        else :
-            self.mapView.conquerTerritory(territoryName, self.id, soliderCount)
+        elif (self.mapView.getTroopCount(attackTerritory) < 2):
+            # checks if the attacking territory has enough troops to attacks
+            return False
+        else:
+            self.battleSequence(self.mapView.getTroopCount(
+                attackTerritory), self.mapView.getTroopCount(defendTerritory), diceAmount)
             return True
-    
+
+    # once a player wins a battle they may conquer
+    def conquer(self, attackTerritory, defendTerritory, amountOfTroopsToMove):
+        attackTerritoryTroopCount = self.mapView.getTroopCount(attackTerritory)
+        if (amountOfTroopsToMove > attackTerritoryTroopCount):
+            return False
+        elif amountOfTroopsToMove - attackTerritoryTroopCount < 1:
+            return False
+
+        self.setTroops(attackTerritory,
+                       attackTerritoryTroopCount - amountOfTroopsToMove)
+        self.conquerTerritory(defendTerritory, amountOfTroopsToMove)
+        return True
+
     # this will receive a newMap
-    def receiveNewMap(self, newMap : Map):
+    def receiveNewMap(self, newMap: Map):
         self.mapView = newMap
 
     # this will send a deepcopy of this players mapView
     def sendMap(self):
         return copy.deepcopy(self.mapView)
+
+    # dice roll
+    def diceRoll(self):
+        return random.randint(1, 6)
+
+    # this method plays through only one battle sequence
+    # returns an array where the first value is attacker's troops after battle
+    # and the 2nd array value is the defender's troop after battle
+    def battleSequence(self, attackTroopCount, defentTroopCount, diceRollAmount):
+        # the amount of diceRolls permited, per player
+        attackDiceRoll = diceRollAmount
+        defenseDiceRoll = 2 if defentTroopCount > 2 else 1
+
+        # the number of attacks phases is based on the amount of defence and attack Troops
+        amountOfAttacks = 2 if defentTroopCount == 2 and attackTroopCount > 2 else 1
+
+        # ther arrays contain the dice values
+        attackDiceArray = [None] * attackDiceRoll
+        defensekDiceArray = [None] * defenseDiceRoll
+
+        # dice is rolled and the values are placed in the dice arrays
+        for i in range(attackDiceRoll):
+            attackDiceArray[i] = int(self.diceRoll())
+
+        for i in range(defenseDiceRoll):
+            defensekDiceArray[i] = int(self.diceRoll())
+
+        # dice are rted
+        attackDiceArray.sort()
+        defensekDiceArray.sort()
+
+        # attack phase is done, basically comapres the highest 1st and 2nd dice
+        # to see if Troops will be lost
+        for i in range(amountOfAttacks):
+            if attackDiceArray[i] > defensekDiceArray[i]:
+                defentTroopCount = defentTroopCount - 1
+            else:
+                attackTroopCount = attackTroopCount - 1
+
+        return [attackTroopCount, defentTroopCount]
+
+   # sets troops on territory
+    def setTroops(self, territoryName, amountOfTroops):
+        if self.mapView.listOfTerritories.get(territoryName)[0] == self.id:
+            newTerritoryStat = [self.id, amountOfTroops]
+            self.mapView.listOfTerritories[territoryName] = newTerritoryStat
+            return True
+        return False
+
+    # adds troops to a territory
+    def addTroops(self, territoryName, amountOfTroops):
+        return self.setTroops(territoryName, self.mapView.getTroopCount(territoryName) + amountOfTroops)
+
+     # conqueres territory per player
+    def conquerTerritory(self, territoryName, numberOfTroops):
+        newTerritoryStats = [self.id, numberOfTroops]
+        self.mapView.listOfTerritories[territoryName] = newTerritoryStats
