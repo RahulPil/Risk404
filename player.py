@@ -44,11 +44,10 @@ class Player:
         if (self.mapView.canBeAttacked(defendTerritory, self.id) == False or self.mapView.isBorder(attackTerritory, defendTerritory) == False):
             return False
         elif (self.mapView.getTroopCount(attackTerritory) < 2):
-            # checks if the attacking territory has enough troops to attacks
+            # checks if the attacking terrsitory has enough troops to attacks
             return False
         else:
-            self.battleSequence(self.mapView.getTroopCount(
-                attackTerritory), self.mapView.getTroopCount(defendTerritory), diceAmount)
+            self.battleSequence(attackTerritory, defendTerritory, diceAmount)
             return True
 
     # once a player wins a battle they may conquer
@@ -56,11 +55,13 @@ class Player:
         attackTerritoryTroopCount = self.mapView.getTroopCount(attackTerritory)
         if (amountOfTroopsToMove > attackTerritoryTroopCount):
             return False
-        elif amountOfTroopsToMove - attackTerritoryTroopCount < 1:
+        elif attackTerritoryTroopCount - amountOfTroopsToMove < 1:
+            return False
+        elif self.mapView.listOfTerritories.get(defendTerritory)[1] != 0:
             return False
 
         self.setTroops(attackTerritory,
-                       attackTerritoryTroopCount - amountOfTroopsToMove)
+                       (attackTerritoryTroopCount - amountOfTroopsToMove))
         self.conquerTerritory(defendTerritory, amountOfTroopsToMove)
         return True
 
@@ -79,7 +80,11 @@ class Player:
     # this method plays through only one battle sequence
     # returns an array where the first value is attacker's troops after battle
     # and the 2nd array value is the defender's troop after battle
-    def battleSequence(self, attackTroopCount, defentTroopCount, diceRollAmount):
+    def battleSequence(self, attackTerritory, defendTerritory, diceRollAmount):
+
+        attackTroopCount = self.mapView.getTroopCount(attackTerritory)
+        defentTroopCount = self.mapView.getTroopCount(defendTerritory)
+
         # the amount of diceRolls permited, per player
         attackDiceRoll = diceRollAmount
         defenseDiceRoll = 2 if defentTroopCount > 2 else 1
@@ -99,8 +104,8 @@ class Player:
             defensekDiceArray[i] = int(self.diceRoll())
 
         # dice are rted
-        attackDiceArray.sort()
-        defensekDiceArray.sort()
+        attackDiceArray.sort(reverse=True)
+        defensekDiceArray.sort(reverse=True)
 
         # attack phase is done, basically comapres the highest 1st and 2nd dice
         # to see if Troops will be lost
@@ -110,7 +115,8 @@ class Player:
             else:
                 attackTroopCount = attackTroopCount - 1
 
-        return [attackTroopCount, defentTroopCount]
+        self.setTroops(attackTerritory, attackTroopCount)
+        self.mapView.listOfTerritories[defendTerritory] = [self.mapView.listOfTerritories[defendTerritory][0], defentTroopCount]
 
    # sets troops on territory
     def setTroops(self, territoryName, amountOfTroops):

@@ -41,14 +41,22 @@ def main():
         p1.addTroopCount(50)
         p1.addTroops('United States of America', 25)
         p1.addTroops('Canada', 25)
-        print(f'Player 1: {p1.getTroopTerritories()}')
+        print(f'Player 1: {p1.mapView.getMap()}')
+        print("\n")
         
 
         print("T.2 p1 intaites a battle sequence with a territory it CANNOT conquer")
         print(f'Did p1 battle p2?: {p1.battle("United States", "Central Africa", 2)}')
+        print("\n")
 
-        print("T.3 p3 intaites a battle sequence with a territory it CAN conquer")
-        print(f'Did p1 battle p3?: {p1.battle("Canada", "Russia", 2)}')
+        print("T.3 p1 intaites a battle sequence with a territory it CAN conquer")
+        print(f'Did p1 battle p3?: {p1.battle("Canada", "Russia", 3)}')
+        print(f'The main Map\n {p1.mapView.getMap()}')
+        print("\n")
+
+        print("T.4 p1 should conquer p3's territory")
+        print(f'Did p1 conquer p3?: {p1.conquer("Canada", "Russia", 4)}')
+        print(f'The main Map\n {p1.mapView.getMap()}')
 
 
 if __name__ == "__main__":
