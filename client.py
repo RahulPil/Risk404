@@ -10,11 +10,16 @@ from player import Player
 
 # is the actual host of the game
 def gameHost(gameID, client_server_name, client_port_number, player_count, gamehost_username):
+    # establishes the socket from which the other players will connect to
     host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host_socket.bind((client_server_name, client_port_number))
     host_socket.listen(player_count)
     number_of_connections = 0
     clients = {}
+
+    # this while loop will loop untill the playercount is reached
+    # each new connection is added to the client array
+    # this array will hold the socket information
     while number_of_connections < player_count:
         connectionSocket, addr = host_socket.accept()
         
@@ -58,8 +63,9 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
     # the host address is
     while mainMap.oneWinner() == False:
         for i in playerArray:
+            
             if playerArray[0].id == 1:
-                print("Hello Player 1, remember the first number is the player number, the 2nd number is the amount of troops on that territory")
+                print("Hello Player 1")
                 playerArray[0].printTroopTerritories()
 
                 # get soldiers, this means that as long as the player can
@@ -121,10 +127,22 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                                 break
                         else:
                             print("This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
+                
+                # troop moving phase
+                isMove = input('Would you like to move territories from one territory to another?, say Yes, or No: ')
+                if (isMove == 'Yes'):
+                    movingTerritory = 'What territory would you like to take troops from?'
+                    amountOfTroops = 'How many troops would you like to move?'
+                    receivingTerritory = 'Which territory would you like to move these Troops?'
 
+
+
+
+
+            # LOGIC FOR LEAVING A GAME  client only
             # moving phase
             print("You can move players now, what territory ")
-
+        # LOGIC FOR LEAVING A GAME host only
 
 def gamePlayer(host_socket):
     print("HERE")
@@ -160,6 +178,7 @@ while True:
         print(dataDecoded)
         clientChoise = input('Option: ')
 
+        # QUESTIONABLE THIS IS AN EXIT PART TAKE CLOSE LOOK AT IT
         if (clientChoise == 'EXIT'):
             clientSocket.close()
             clientSocket.send(3)
@@ -181,6 +200,9 @@ if ("Game Host" in dataDecoded):
     client_server_name = input("What is your server's name?: ")
     client_port_number = input("What is your port number?: ")
     player_count = input("How many players?: ")
+
+    # send the server the total number of players allowed in the game session:
+    #clientSocket.send(player_count.encode('ascii'))
     
     # go to game function
     gameHost(gameID, client_server_name, int(

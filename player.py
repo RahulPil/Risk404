@@ -144,3 +144,9 @@ class Player:
     def conquerTerritory(self, territoryName, numberOfTroops):
         newTerritoryStats = [self.id, numberOfTroops]
         self.mapView.listOfTerritories[territoryName] = newTerritoryStats
+    
+
+    # 
+    def moveTroops(self, sendingTerritory, receivingTerritory, amountOfTroops):
+
+

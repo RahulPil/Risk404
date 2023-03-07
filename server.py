@@ -20,7 +20,7 @@ server_socket.listen()
 def gameSession(connectionSocket, game_sess):
     # check for quit message in a while loop
     # make sure to use the read blocking call and when the client does want to quit we can grind that 
-    
+
     # if the player is a reg client 
     
     # if the player is the host client
@@ -62,6 +62,7 @@ def main_event_loop(connectionSocket):
 
             connectionSocket.send(f'Game Host: {game_Sess}'.encode('ascii'))
             connectionSocket.send(username.encode('ascii'))
+            
             # must create thread so that client doesnt get bombarded with messages
             gameSession = threading.Thread(target=gameSession, args=(connectionSocket, game_Sess))
             print_lock.acquire()
