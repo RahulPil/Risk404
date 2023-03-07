@@ -37,6 +37,11 @@ class Player:
     # this methid encapsulates the getCountyTroopCount in the map.py object
     def getTroopTerritories(self):
         return self.mapView.getPlayerSoldierList(self.id)
+    
+    # prints all territories w/ Troop Count
+    def printTroopTerritories(self):
+        for territroyFact in self.mapView.getPlayerSoldierList(self.id):
+            print(f'{territroyFact[0]}: {territroyFact[2]}\n')
 
     # playes out a battle sequence
     def battle(self, attackTerritory, defendTerritory, diceAmount):
@@ -126,6 +131,11 @@ class Player:
             return True
         return False
 
+    # get certain territory stats
+    def printTerritroyStats(self, territoryName):
+        terrStat = self.mapView.listOfTerritories.get(territoryName)
+        print(f'{territoryName} is owned by Player {terrStat[0]}, it has {terrStat[1]} troops')
+    
     # adds troops to a territory
     def addTroops(self, territoryName, amountOfTroops):
         return self.setTroops(territoryName, self.mapView.getTroopCount(territoryName) + amountOfTroops)

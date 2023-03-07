@@ -22,15 +22,15 @@ def main():
         print("\n")
 
         print("T.1: The list of territories without troop count")
-        print(f'Player 1: {p1.listTerritories()}')
+        print(f'Player 1: {p1.printTroopTerritories()}')
         print(f'Player 2: {p2.listTerritories()}')
         print(f'Player 3: {p3.listTerritories()}')
         print("\n")
 
         print("T.2: The list of territories w/ troops count")
-        print(f'Player 1: {p1.getTroopTerritories()}')
-        print(f'Player 2: {p2.getTroopTerritories()}')
-        print(f'Player 3: {p3.getTroopTerritories()}')
+        p1.printTroopTerritories()
+        p2.printTroopTerritories()
+        p3.printTroopTerritories()
 
     if testNumber == 3:
         print("This is TEST 3")
