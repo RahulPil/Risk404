@@ -237,7 +237,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
         return userInput
 
 
-def gamePlayer(clientSocket : socket):
+def gamePlayer(clientSocket : socket, serverSocket: socket):
     # begins the client conenction to the Server
 
     # waits for a socket response
@@ -361,7 +361,8 @@ def gamePlayer(clientSocket : socket):
                     return userInput
     else :
         print(badPlayerData)
-        host_socket.close()
+        clientSocket.close()
+        serverSocket.send("SERVER QUIT")
 
 # intaites the proccess in which a user begins to play the game
 def beginServerConnection():
@@ -428,7 +429,7 @@ def beginServerConnection():
         hostSocketInteraction.connect((host_socket.gethostname(), host_socket.getsockname()[1]))
 
         # to recieve on the client side you need to do  and then
-        gamePlayer(hostSocketInteraction)
+        gamePlayer(hostSocketInteraction, serverSocket)
 
 
     
