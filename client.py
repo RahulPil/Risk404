@@ -8,23 +8,27 @@ from player import Player
 # https://www.geeksforgeeks.org/socket-programming-multi-threading-python/
 
 
-# is the actual host of the game
-def gameHost(gameID, client_server_name, client_port_number, player_count):
+def gameHost(gameID, client_server_name, client_port_number, player_count, gamehost_username):
+    # establishes the socket from which the other players will connect to
     host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host_socket.bind((client_server_name, client_port_number))
     host_socket.listen(player_count)
     number_of_connections = 0
     clients = {}
+
+    # this while loop will loop untill the playercount is reached
+    # each new connection is added to the client array
+    # this array will hold the socket information
     while number_of_connections < player_count:
         connectionSocket, addr = host_socket.accept()
 
-        connectionSocket.send('Username? '.encode('ascii'))
-        username = connectionSocket.recv(1024).decode('ascii')
+        username = clientSocket.recv(1024).decode('ascii')
         clients[username] = connectionSocket
 
-        print(
-            f'Player {number_of_connections + 1}, also known as {username} has joined!')
+        print(f'Player {number_of_connections + 1}, also known as {username} has joined!')
         number_of_connections = number_of_connections + 1
+
+     # SEND FULL MSG TO HOST
 
     # intilizes the game map
     mainMap = Map(player_count)
@@ -45,34 +49,112 @@ def gameHost(gameID, client_server_name, client_port_number, player_count):
         playerArray[i].setSoliderCount(troopPerPlayer)
         i = i + 1
 
+    # place at least 1 troop on territory
+    for player in playerArray:
+        listOfPlayerTerritory = player.listTerritories()
+        for territory in listOfPlayerTerritory:
+            player.addTroop(territory, 1)
+            player.addTroopCount(-1)
+
     # this loop begins the game proccess
     # because the host has to play on the same connection
     # the host address is
     while mainMap.oneWinner() == False:
         for i in playerArray:
+
             if playerArray[0].id == 1:
                 print("Hello Player 1")
-                print(mainMap.getPlayerTerritoryList(1))
+                playerArray[0].printTroopTerritories()
 
                 # get soldiers, this means that as long as the player can
                 # place soliders the must place them, they can't hold them in storage
                 # this completes the placing troop proccess
                 while (troopPerPlayer > 0):
-                    territory_name = input("Where do you want to place your soilders?: ")
-                    soilder_amount = int(input("How many soilders?: "))
+                    territory_name = input("Where do you want to place your troops?: ")
+                    soilder_amount = int(input("How many troops?: "))
 
-                    if playerArray[0].placeSoliders(territory_name, soilder_amount) == False:
-                        print ("You can't place troops there")
+                    if playerArray[0].addTroops(territory_name, soilder_amount) == False:
+                        print("You can't place troops there")
 
-                territory_name
-                troop_amount = 0
-                while territory_name != "Done" and troop_amount != "Done":
-                    territory_name = input("What territory would you like to conquer?: ")
-                    
+                # combat phase
+                print("Who would you like to conquer!!!!!")
+                print("Type Done, when you're finished")
+                inGame = True
+                while (inGame):
+                    defendingTerritory = input(
+                        "What territory would you like to conquer?: ")
+                    attackingTerritory = input(
+                        "From which territroy would you like to conquer?: ")
+                    diceAmount = input(
+                        "How many dice would you like to use, the most is 3, given that you have 3 or more troops on the attacking territory")
+                    if (defendingTerritory == "Done" or attackingTerritory == "Done" or diceAmount == "Done"):
+                        inGame = False
+                    else:
+                        diceAmount = int(diceAmount)
+                        if (playerArray[0].battle(attackingTerritory, defendingTerritory, diceAmount)):
+                            print(playerArray[0].getTroopTerritories())
 
+                            if (playerArray[0].battle(attackingTerritory, defendingTerritory, diceAmount) > 0):
 
-                # handels a non-host player
+                                continueAttacking = True
+                                while (continueAttacking == True):
+                                    input = input(
+                                        "Would you like to keep attacking the same territory, say No or Yes")
+                                    if (input == "No"):
+                                        continueAttacking = False
+                                    else:
+                                        if (playerArray[0].battle(attackingTerritory, defendingTerritory, diceAmount)):
+                                            if (playerArray[0].getTroopCount(defendingTerritory) > 0):
+                                                print(
+                                                    f'{defendingTerritory} current stats, vs {attackingTerritory} current stats')
+                                                playerArray[0].printTerritroyStats(
+                                                    defendingTerritory)
+                                                playerArray[0].printTerritroyStats(
+                                                    attackingTerritory)
 
+                                            else:
+                                                print(
+                                                    "You can conquer this territory!")
+                                                troupAmount = int(
+                                                    input("How many troops would you like to move?: "))
+                                                playerArray[0].conquer(
+                                                    attackingTerritory, defendingTerritory, troupAmount)
+                                                continueAttacking = False
+
+                                        else:
+                                            print("You've run out of Troops!")
+                                            continueAttacking = False
+                            else:
+                                print("You can conquer this territory!")
+                                troupAmount = int(
+                                    input("How many troops would you like to move?: "))
+                                playerArray[0].conquer(
+                                    attackingTerritory, defendingTerritory, troupAmount)
+                                break
+                        else:
+                            print(
+                                "This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
+
+                # troop moving phase
+                isMove = input(
+                    'Would you like to move territories from one territory to another?, say Yes, or No: ')
+                if (isMove == 'Yes'):
+                    quitButton = False
+                    while quitButton:
+                        print("Type No to end this phase")
+                        movingTerritory = 'What territory would you like to take troops from?'
+                        amountOfTroops = 'How many troops would you like to move?'
+                        receivingTerritory = 'Which territory would you like to move these Troops?'
+                        if ((movingTerritory == "No") == False and (amountOfTroops == "No") == False and (receivingTerritory == "No") == False):
+                            amountOfTroops = int(amountOfTroops)
+                            if (playerArray[0].moveTroops()):
+                                quitButton = True
+                            else:
+                                print("This move is incorrect")
+                        else:
+                            quitButton = True
+            else :
+                # HANDELS THE CONNECTION W/ other user
 
 def gamePlayer(host_socket):
     print("HERE")

@@ -134,3 +134,15 @@ class Player:
     def conquerTerritory(self, territoryName, numberOfTroops):
         newTerritoryStats = [self.id, numberOfTroops]
         self.mapView.listOfTerritories[territoryName] = newTerritoryStats
+    
+    # moves troops from one point of the map to anoterh
+    def moveTroops(self, receivingTerritory, sendingTerritory, amountOfTroops):
+        sendTroops = self.mapView.getTroopCount(sendingTerritory)
+
+        # checks that all territories are under the plyers control, and that the sending territory will have at least one player left
+        if (amountOfTroops >= sendTroops or receivingTerritory in self.listTerritories == False or sendingTerritory in self.listTerritories == False):
+            return False
+        
+        self.addTroops(sendingTerritory, -1 * amountOfTroops)
+        self.addTroops(receivingTerritory, amountOfTroops)
+        return False
