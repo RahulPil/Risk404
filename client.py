@@ -237,12 +237,8 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
         return userInput
 
 
-def gamePlayer(host_socket : socket):
+def gamePlayer(clientSocket : socket):
     # begins the client conenction to the Server
-
-    # extracts information from the host_socket and connect to it
-    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientSocket.connect((host_socket.gethostname(), clientSocket.getsockname()[1]))
 
     # waits for a socket response
     badPlayerData = clientSocket.recv(1024).decode('ascii')
@@ -427,8 +423,14 @@ def beginServerConnection():
         data = serverSocket.recv(4096).decode('ascii')
         host_socket = pickle.loads(data)
 
+        # extracts information from the host_socket and connect to it
+        hostSocketInteraction = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        hostSocketInteraction.connect((host_socket.gethostname(), host_socket.getsockname()[1]))
+
         # to recieve on the client side you need to do  and then
-        gamePlayer(host_socket)
+        gamePlayer(hostSocketInteraction)
+
+
     
 def main():
     beginServerConnection()
