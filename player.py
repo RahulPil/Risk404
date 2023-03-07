@@ -17,16 +17,16 @@ class Player:
     def __init__(self, newName, newNumber, newMap: Map):
         self.name = newName
         self.id = newNumber
-        self.TroopCount = 0
+        self.troopCount = 0
         self.mapView = copy.deepcopy(newMap)
 
     # sets the initial Troop count
     def setTroopCount(self, count):
-        self.TroopCount = count
+        self.troopCount = count
 
     # adds to the Troop count
     def addTroopCount(self, count):
-        self.setTroopCount = self.TroopCount + count
+        self.setTroopCount = self.troopCount + count
 
     # list all territories controled by the player
     # this method encapsulates the getPlayerTerritoryList in the map.py object
@@ -128,6 +128,11 @@ class Player:
 
     # adds troops to a territory
     def addTroops(self, territoryName, amountOfTroops):
+        if (amountOfTroops < 0):
+            troopCount = troopCount + amountOfTroops
+        else :
+            troopCount = troopCount - amountOfTroops
+
         return self.setTroops(territoryName, self.mapView.getTroopCount(territoryName) + amountOfTroops)
 
      # conqueres territory per player
@@ -146,3 +151,4 @@ class Player:
         self.addTroops(sendingTerritory, -1 * amountOfTroops)
         self.addTroops(receivingTerritory, amountOfTroops)
         return False
+
