@@ -32,7 +32,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
     while number_of_connections < player_count:
         connectionSocket, addr = host_socket.accept()
 
-        username = connectionSocket.recv(1024).decode('ascii')
+        username = connectionSocket.recv(1024).decode()
         clients[username] = connectionSocket
         playerArray[number_of_connections].name = username
 
@@ -179,10 +179,10 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
 
                 # uses pickile to serlize the map, then sends it via socket
                 sendingPlayer = pickle.dumps(playerArray[i])
-                connectionSocket.send(sendingPlayer.encode('ascii'))
+                connectionSocket.send(sendingPlayer.encode())
 
                 # waits for a socket response
-                badPlayerData = currentSocket.recv(1024).decode('ascii')
+                badPlayerData = currentSocket.recv(1024).decode()
                 if (badPlayerData != "SERVER QUIT"):
                     # uses pickile to load map
                     playerData = pickle.loads(badPlayerData)
@@ -245,7 +245,7 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
     # begins the client conenction to the Server
 
     # waits for a socket response
-    badPlayerData = clientSocket.recv(1024).decode('ascii')
+    badPlayerData = clientSocket.recv(1024).decode()
 
     if (badPlayerData != "A user has Quit, will return to main screen shortly" or "Congratulations Winner!" or "You lost (loser)"):
         # uses pickile to load map
@@ -351,7 +351,7 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
 
                 # sends updated player view back to the host
                 sendingPlayer = pickle.dumps(playerData)
-                clientSocket.send(sendingPlayer.encode('ascii'))
+                clientSocket.send(sendingPlayer.encode())
 
                 # idea from sources
                 def userClientInput(msg):
@@ -380,18 +380,23 @@ def beginServerConnection(serverSocket):
     while True:
         # message received from server and decoded
         data = serverSocket.recv(1024)
-        dataDecoded = data.decode('ascii')
+        dataDecoded = data.decode()
 
         if "Game Host" not in dataDecoded or "Valid game sessions" not in dataDecoded:
             print(dataDecoded)
-            clientChoise = input('Option: ')
+            if "username" in dataDecoded:
+                clientUsername = input('Username: ')
+                serverSocket.send(clientUsername.encode())
+            else:
+                clientChoise = input('Option: ')
 
-            if (clientChoise == 'EXIT'):
-                serverSocket.close()
-                serverSocket.send(3)
-                exit(0)
+                if (clientChoise == 'EXIT'):
+                    serverSocket.close()
+                    #potential shit
+                    serverSocket.send(3)
+                    exit(0)
 
-            serverSocket.send(int(clientChoise.encode('ascii')))
+                serverSocket.send(clientChoise.encode())
         else:
             break
 
@@ -418,7 +423,7 @@ def beginServerConnection(serverSocket):
         serverSocket.send(int(input("What session would you like to joining?: ")))
 
         # receives the connectection from the ID
-        data = serverSocket.recv(4096).decode('ascii')
+        data = serverSocket.recv(4096).decode()
         host_socket = pickle.loads(data)
 
         # extracts information from the host_socket and connect to it
