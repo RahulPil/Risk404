@@ -11,7 +11,7 @@ from player import Player
 # https://stackoverflow.com/questions/71857924/checking-all-user-input-for-a-specific-value
 
 
-def gameHost(gameID, client_server_name, client_port_number, player_count, gamehost_username, serverSocket: socket):
+def gameHost(gameID, client_server_name, client_port_number, player_count, serverSocket: socket):
     # establishes the socket from which the other players will connect to
     host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host_socket.bind((client_server_name, client_port_number))
@@ -375,35 +375,36 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
 def beginServerConnection(serverSocket):
     # this message variable will server as the server's conenction point
     dataDecoded = ""
-
+    run = True
     # begins the interaction with the SERVER socket
-    while True:
+    while run:
         # message received from server and decoded
         data = serverSocket.recv(1024)
         dataDecoded = data.decode()
+        print(dataDecoded)
+        if "username:" in dataDecoded:
+            clientUsername = input('Username: ')
+            serverSocket.send(clientUsername.encode())
+        elif "Game Host:" not in dataDecoded and "Valid game sessions:" not in dataDecoded and "username:" not in dataDecoded:
+            clientChoise = input('Option: ')
 
-        if "Game Host" not in dataDecoded or "Valid game sessions" not in dataDecoded:
-            print(dataDecoded)
-            if "username" in dataDecoded:
-                clientUsername = input('Username: ')
-                serverSocket.send(clientUsername.encode())
-            else:
-                clientChoise = input('Option: ')
+            if (clientChoise == 'EXIT'):
+                serverSocket.close()
+                #potential shit
+                serverSocket.send(3)
+                exit(0)
 
-                if (clientChoise == 'EXIT'):
-                    serverSocket.close()
-                    #potential shit
-                    serverSocket.send(3)
-                    exit(0)
-
-                serverSocket.send(clientChoise.encode())
+            serverSocket.send(clientChoise.encode())
         else:
-            break
+            run = False
 
     # if the client wants to host the game
-    if ("Game Host" in dataDecoded):
+    if ("Game Host:" in dataDecoded):
+        print('inside game host if statement')
         # regex for the gameID
-        gameID = re.search("[0-9]*", dataDecoded)
+        gameID = re.search("[0-9]+", dataDecoded)
+        gameID = gameID.group()
+        print(gameID)
 
         # get game information from host
         client_server_name = input("What is your server's name?: ")
@@ -416,11 +417,11 @@ def beginServerConnection(serverSocket):
         # if the client just wants to join a game
 
         # regex for list of IDs
-        validIds = re.search("\[.+\]", dataDecoded)
+        validIds = (re.search("\[.+\]", dataDecoded)).group()
 
         # user inputs the ID
         print(f'Here are the valid game sessions: {validIds}')
-        serverSocket.send(int(input("What session would you like to joining?: ")))
+        serverSocket.send(input("What session would you like to joining?: "))
 
         # receives the connectection from the ID
         data = serverSocket.recv(4096).decode()
