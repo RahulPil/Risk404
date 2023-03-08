@@ -129,9 +129,9 @@ class Player:
     # adds troops to a territory
     def addTroops(self, territoryName, amountOfTroops):
         if (amountOfTroops < 0):
-            troopCount = troopCount + amountOfTroops
+            self.troopCount = self.troopCount + amountOfTroops
         else :
-            troopCount = troopCount - amountOfTroops
+            self.troopCount = self.troopCount - amountOfTroops
 
         return self.setTroops(territoryName, self.mapView.getTroopCount(territoryName) + amountOfTroops)
 
@@ -151,4 +151,11 @@ class Player:
         self.addTroops(sendingTerritory, -1 * amountOfTroops)
         self.addTroops(receivingTerritory, amountOfTroops)
         return False
+    
+    # prints the player's territories w/ troop count
+    def printTroopTerritories(self):
+        listOfTerr = self.getTroopTerritories()
+        print('Territory Name: TroopCount')
+        for terrBlock in listOfTerr:
+            print(f'{terrBlock[0]}: {terrBlock[1]}')
 

@@ -58,6 +58,8 @@ def main():
         print(f'Did p1 conquer p3?: {p1.conquer("Canada", "Russia", 4)}')
         print(f'The main Map\n {p1.mapView.getMap()}')
 
+    if testNumber == 4:
+        p1.printTroopTerritories()
 
 if __name__ == "__main__":
     main()

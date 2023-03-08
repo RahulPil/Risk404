@@ -23,18 +23,9 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
     troopPerPlayer = 35
     tempPlayerCount = player_count
     while (tempPlayerCount > 3):
-        troopPerPlayer = 35 - 5
+        troopPerPlayer = troopPerPlayer - 5
         tempPlayerCount = tempPlayerCount - 1
-
-    # creates an Array of players
-    # also sets the default troop amount
-    playerArray = [player_count]
-    i = 0
-    for key in clients:
-        playerArray[i] = Player(key, i + 1, mainMap)
-        playerArray[i].setSoliderCount(troopPerPlayer)
-        i = i + 1
-
+    
     # this while loop will loop untill the playercount is reached
     # each new connection is added to the client array
     # this array will hold the socket information
@@ -48,7 +39,14 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
         print(f'Player {number_of_connections + 1}, also known as {username} has joined!')
         number_of_connections = number_of_connections + 1
 
-     # SEND FULL MSG TO HOST
+    # creates an Array of players
+    # also sets the default troop amount
+    playerArray = [player_count]
+    i = 0
+    for key in clients:
+        playerArray[i] = Player(key, i + 1, mainMap)
+        playerArray[i].setSoliderCount(troopPerPlayer)
+        i = i + 1
 
     # intilizes the game map
     mainMap = Map(player_count)
@@ -58,12 +56,10 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
         listOfPlayerTerritory = player.listTerritories()
         for territory in listOfPlayerTerritory:
             player.addTroop(territory, 1)
-            player.addTroopCount(-1)
 
     # this loop begins the game proccess
     # because the host has to play on the same connection
     # the host address of the address
-
     indexOflist = 0
     while mainMap.oneWinner() == False:
         for i in playerArray:
@@ -87,7 +83,9 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                     if playerArray[0].addTroops(territory_name, soilder_amount) == False:
                         print("You can't place troops there")
 
-                # combat phase
+                playerArray[0].printTroopTerritories()
+
+                # COMBAT PHASE
                 print("Who would you like to conquer!!!!!")
                 print("Type No, when you're finished")
                 inGame = True
@@ -99,6 +97,9 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                     if (defendingTerritory == "No" or attackingTerritory == "No" or diceAmount == "No"):
                         inGame = False
                     else:
+                        # prints terriotires
+                        playerArray[0].printTroopTerritories()
+
                         # converts dice to integer number
                         diceAmount = int(diceAmount)
 
@@ -117,19 +118,16 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                                     if (input == "No"):
                                         continueAttacking = False
                                     else:
-                                        # checks if a battle can be conquered
+                                        # checks if a battle occured
                                         if (playerArray[0].battle(attackingTerritory, defendingTerritory, diceAmount)):
-                                            # checks if the troop count of the denfer has hit 0
+                                            # checks if the troop count of the defender has hit 0
                                             if (playerArray[0].getTroopCount(defendingTerritory) > 0):
-                                                print(f'{defendingTerritory} current stats, vs {attackingTerritory} current stats')
-                                                playerArray[0].printTerritroyStats(defendingTerritory)
-                                                playerArray[0].printTerritroyStats(attackingTerritory)
-
+                                                print(f'{defendingTerritory} TroopCount: {playerArray[0].mapView().getTroopCount(defendingTerritory)}')
+                                                print(f'{attackingTerritory} TroopCount: {playerArray[0].mapView().getTroopCount(attackingTerritory)}')
                                             else:
                                                 # the terriotry can be conquered
                                                 print("You can conquer this territory!")
-                                                troupAmount = int(
-                                                    userHostInput("How many troops would you like to move?: "))
+                                                troupAmount = int(userHostInput("How many troops would you like to move?: "))
 
                                                 # loops until the user enters a valid amount of troops to send to the new territory
                                                 while (playerArray[0].conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
@@ -148,6 +146,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                                     troupAmount = int(userHostInput("How many troops would you like to move?: "))
                         else:
                             print("This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
+                playerArray[0].printTroopTerritories()
 
                 # troop moving phase
                 isMove = userHostInput('Would you like to move territories from one territory to another?, say Yes, or No: ')
@@ -166,7 +165,8 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                                 print("This move is incorrect")
                         else:
                             quitButton = True
-
+                playerArray[0].printTroopTerritories()
+                
                 # updates final map with new information
                 mainMap = playerArray[0].sendMap()
 
@@ -195,13 +195,15 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
                     # intiaize the client quit proccess
                     print ("A user has Quit, will return to main screen shortly")
                     for p2 in playerArray:
-                        if (p2.id != 1 and p2.username != playerArray[i].username):
+                        if (p2.id != 1):
                             subClient = clients[p2.username]
                             subClient.send("A user has Quit, will return to main screen shortly")
                             subClient.close()
+                            beginServerConnection(serverSocket)
                     
                     # send to server SERVER QUIT
                     serverSocket.send("SERVER QUIT")
+                    beginServerConnection(serverSocket)
 
     # If there is one winner, then all the territories will have the same
     playerId = playerArray[0].mapView.listOfTerritories["Canada"][0]
@@ -220,6 +222,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
             subClient.send("Congratulations Winner!")
             subClient.close()
     serverSocket.send("SERVER QUIT")
+    beginServerConnection(serverSocket)
     
     # idea from sources
     def userHostInput(msg):
@@ -227,13 +230,14 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, gameh
         if userInput == "SERVER QUIT":
             print ("Your a Baby!")
             for p2 in playerArray:
-                if (p2.id != 1 and p2.username != playerArray[i].username):
+                if (p2.id != 1 and p2.username):
                     subClient = clients[p2.username]
                     subClient.send("A user has Quit, will return to main screen shortly")
                     subClient.close()
                     
             # send to server SERVER QUIT
             serverSocket.send("SERVER QUIT")
+            beginServerConnection(serverSocket)
         return userInput
 
 
@@ -249,7 +253,7 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
 
         # if it receives client data
         if playerData.mapView.oneWinner() == False:
-            # counts user territory if it's above a certin amount the player will get more troops
+            # counts user territory if it's above a certain amount the player will get more troops
             amountToBeAdded = 3 if playerData.troopCount <= 9 else int(math.floor(playerData.troopCount / 3))
             playerData.troopCount = playerData.troopCount + amountToBeAdded
 
@@ -264,6 +268,7 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                 soilder_amount = int(userClientInput("How many troops?: "))
                 if playerData.addTroops(territory_name, soilder_amount) == False:
                     print("You can't place troops there")
+            playerData.printTroopTerritories()
 
             # combat phase
             print("Who would you like to conquer!!!!!")
@@ -299,9 +304,8 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                                     if (playerData.battle(attackingTerritory, defendingTerritory, diceAmount)):
                                         # checks if the troop count of the defender has hit 0
                                         if (playerData.getTroopCount(defendingTerritory) > 0):
-                                            print(f'{defendingTerritory} current stats, vs {attackingTerritory} current stats')
-                                            playerData.printTerritroyStats(defendingTerritory)
-                                            playerData.printTerritroyStats(attackingTerritory)
+                                            print(f'{defendingTerritory} TroopCount: {playerData.mapView().getTroopCount(defendingTerritory)}')
+                                            print(f'{attackingTerritory} TroopCount: {playerData.mapView().getTroopCount(attackingTerritory)}')
                                         else:
                                             # the terriotry can be conquered
                                             print("You can conquer this territory!")
@@ -316,14 +320,15 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                                         # the troop count has gone too low
                                         print("You've run out of Troops!")
                                         continueAttacking = False
-                            else:
-                                print("You can conquer this territory!")
-                                troupAmount = int(userClientInput("How many troops would you like to move?: "))
-                                while (playerData.conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
-                                    print("False troop movement amount")
-                                    troupAmount = int(userClientInput("How many troops would you like to move?: "))
                         else:
-                            print("This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
+                            print("You can conquer this territory!")
+                            troupAmount = int(userClientInput("How many troops would you like to move?: "))
+                            while (playerData.conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
+                                print("False troop movement amount")
+                                troupAmount = int(userClientInput("How many troops would you like to move?: "))
+                    else:
+                        print("This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
+                playerData.printTroopTerritories()
 
                 # troop moving phase
                 isMove = userClientInput('Would you like to move territories from one territory to another?, say Yes, or No: ')
@@ -342,6 +347,7 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                                 print("This move is incorrect")
                         else:
                             quitButton = True
+                playerData.printTroopTerritories()
 
                 # sends updated player view back to the host
                 sendingPlayer = pickle.dumps(playerData)
@@ -363,19 +369,10 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
         print(badPlayerData)
         clientSocket.close()
         serverSocket.send("SERVER QUIT")
+        beginServerConnection(serverSocket)
 
 # intaites the proccess in which a user begins to play the game
-def beginServerConnection():
-    # main server information
-    server_name = 'csslab8.uwb.edu'
-    server_port = 5176
-
-    print("Welcome to Simple Risk")
-
-    # begins the client conenction to the Server
-    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverSocket.connect((server_name, server_port))
-
+def beginServerConnection(serverSocket):
     # this message variable will server as the server's conenction point
     dataDecoded = ""
 
@@ -434,7 +431,16 @@ def beginServerConnection():
 
     
 def main():
-    beginServerConnection()
+    # main server information
+    server_name = 'csslab8.uwb.edu'
+    server_port = 5176
+
+    print("Welcome to Simple Risk")
+
+    # begins the client conenction to the Server
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverSocket.connect((server_name, server_port))
+    beginServerConnection(serverSocket)
 
 
 if __name__ == "__main__":
