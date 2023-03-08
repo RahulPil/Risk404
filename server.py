@@ -19,6 +19,7 @@ server_socket.bind((server_name, server_port))
 server_socket.listen()
 
 def gameSession(connectionSocket):
+    print('client entered game session function')
     run = True
     while run:
         try:
@@ -56,42 +57,57 @@ def main_event_loop(connectionSocket):
     print(username)
 
     run = True
-    while run: 
+    while run:
         print('in loop what the fuck')
         connectionSocket.send('Options:\nEnter 1 for creating a new session\nEnter 2 for an existing game session\nEnter 3 to quit'.encode())
         action = connectionSocket.recv(1024).decode()
         action = int(action)
-
+        
         if action == 1:
             #create a new gameID
             game_Sess = random.randint(1, 101)
             while game_Sess in gameID:
                 game_Sess = random.randint(1, 101)
 
+            host_client_info = []
+            host = []
+            connectionSocket.send(f'Game Host: {game_Sess}'.encode())
+            host_server_name = connectionSocket.recv(1024).decode()
+            host_server_port = connectionSocket.recv(1024).decode()
+            host_client_info.append(host_server_name)
+            host_client_info.append(host_server_port)
+            host.append(host_client_info)
+            host.append(connectionSocket)
+
             print_lock.acquire()
-            gameID[game_Sess] = connectionSocket
+            gameID[game_Sess] = host
             print_lock.release()
 
-            connectionSocket.send(f'Game Host: {game_Sess}'.encode())
+            gameSession(connectionSocket)
             # must create thread so that client doesnt get bombarded with messages
-            game_session = threading.Thread(target=gameSession, args=(connectionSocket, ))
-            start_new_thread(gameSession, (connectionSocket, ))
+            # game_session = threading.Thread(target=gameSession, args=(connectionSocket, ))
+            # start_new_thread(gameSession, (connectionSocket, ))
             
         elif action == 2:
             # join an existing game
             print_lock.acquire()
-            connectionSocket.send(f'Valid game sessions: {gameID.keys()}'.encode())
+            gameIds = [key for key in gameID]
+            connectionSocket.send(f'Valid game sessions: {gameIds}'.encode())
             print_lock.release()
             chosen_game_sess = int(connectionSocket.recv(1024).decode())
-            host_client_info = pickle.dumps(gameID[chosen_game_sess])
-            connectionSocket.send(host_client_info.encode())
+            print_lock.acquire()
+            host_client = pickle.dumps(gameID[chosen_game_sess][0])
+            print_lock.release()
+            connectionSocket.send(host_client)
             # send the host client the username of the newly joined client. 
             print_lock.acquire()
-            gameID[chosen_game_sess].send(username.encode())
+            gameID[chosen_game_sess][1].send(username.encode())
             print_lock.release()
+
+            gameSession(connectionSocket)
             # must create thread so that client doesnt get bombarded with messages 
-            game_session = threading.Thread(target=gameSession, args=(connectionSocket, ))
-            start_new_thread(gameSession, (connectionSocket, ))
+            # game_session = threading.Thread(target=gameSession, args=(connectionSocket, ))
+            # start_new_thread(gameSession, (connectionSocket, ))
 
         elif action == 3:
             # break connection and set run = false

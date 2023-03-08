@@ -26,7 +26,7 @@ class Player:
 
     # adds to the Troop count
     def addTroopCount(self, count):
-        self.setTroopCount = self.troopCount + count
+        self.troopCount = self.troopCount + count
 
     # list all territories controled by the player
     # this method encapsulates the getPlayerTerritoryList in the map.py object
