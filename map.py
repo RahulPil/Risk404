@@ -18,7 +18,7 @@ class Map:
         self.listOfTerritories = {
             'Canada': [0, 0],
             'Greenland': [0, 0],
-            'United States of America': [0, 0],
+            'United States Of America': [0, 0],
             'Mexico': [0, 0],
             'Upper South America': [0, 0],
             'Lower South America': [0, 0],
@@ -32,7 +32,7 @@ class Map:
             'Middle East': [0, 0],
             'Russia': [0, 0],
             'Central Asia': [0, 0],
-            'Southeast Asia': [0, 0],
+            'South East Asia': [0, 0],
             'Right Australia': [0, 0],
             'Left Australia': [0, 0]
         }
@@ -40,7 +40,7 @@ class Map:
         # map (in the form of a dic) of map paths/borders
         self.gameMap = {
             'Canada': ["Greenland", 'Russia', 'United States of America'],
-            'United States of America': ["Canada", 'Mexico'],
+            'United States Of America': ["Canada", 'Mexico'],
             'Mexico': ['United States of America', 'Upper South America'],
             'Upper South America': ['Mexico', 'Brazil', 'Lower South America'],
             'Lower South America': ['Upper South America', 'Brazil', 'Right Australia'],
@@ -55,7 +55,7 @@ class Map:
             'South Africa': ['Central Africa', 'Left Australia'],
             'Russia': ['Northern Europe',  'Mainland Europe', 'Central Asia', 'Canada'],
             'Central Asia': ['Russia', 'Mainland Europe', 'Middle East', 'SouthEast Asia'],
-            'SouthEast Asia': ['Central Asia', 'Middle East', 'Right Australia', 'Left Australia'],
+            'South East Asia': ['Central Asia', 'Middle East', 'Right Australia', 'Left Australia'],
             'Right Australia': ['SouthEast Asia', 'Lower South America', 'Left Australia'],
             'Left Australia': ['Right Australia', 'South Africa', 'SouthEast Asia']
         }

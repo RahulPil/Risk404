@@ -87,18 +87,14 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
     # this loop begins the game proccess
     # because the host has to play on the same connection
     # the host address of the address
-    indexOflist = 0
     while mainMap.oneWinner() == False:
         for player in playerArray:
-            print(f'PLAYERID: {player.id}')
-            indexOflist = indexOflist + 1
             if player.id == 1:
                 # counts user territory if it's above a certin amount the player will get more troops
                 amountToBeAdded = 3 if player.troopCount <= 9 else int(math.floor(player.troopCount / 3))
-                player.troopCount = player.troopCount + amountToBeAdded
+                player.addTroopCount(amountToBeAdded)
 
-                indexOflist = 0
-                print("Hello Player 1")
+                print("Hello Player player.id")
                 player.printTroopTerritories()
                 print(f'Total Troop Amount: {player.troopCount}')
 
@@ -107,6 +103,8 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                 # this completes the placing troop proccess
                 while (player.troopCount > 0):
                     territory_name = userHostInput("Where do you want to place your troops?: ")
+                    territory_name = territory_name.lower()
+                    territory_name = territory_name.title()
                     soilder_amount = userHostInput("How many troops?: ")
                     if (soilder_amount.isdigit()):
                         soilder_amount = int(soilder_amount)
@@ -114,11 +112,12 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                             print("You can't place troops there")
                     else:
                         print("Enter valid Troop count")
-                player.printTroopTerritories()
+                    player.printTroopTerritories()
 
                 # COMBAT PHASE
-                print("Who would you like to conquer!!!!!")
-                print("Type No, when you're finished")
+                print("WELCOME CONQUERER!!!")
+                player.printCombatView()
+                print("Type No, if you don't want to")
                 inGame = True
                 # checks it he user decides to quit
                 while (inGame):
@@ -137,16 +136,14 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                     if (defendingTerritory.lower() == "no" or attackingTerritory == "no" or diceAmount == "no"):
                         inGame = False
                     else:
-                        # prints terriotires
-                        player.printTroopTerritories()
-
                         # converts dice to integer number
                         diceAmount = int(diceAmount)
 
                         # if the battle was succefull
                         if (player.battle(attackingTerritory, defendingTerritory, diceAmount)):
-                            # print the territoreis
-                            print(player.getTroopTerritories())
+                            # print the stats about that territory, and their territory
+                            print(f'{defendingTerritory} TroopCount: {player.mapView().getTroopCount(defendingTerritory)}')
+                            print(f'{attackingTerritory} TroopCount: {player.mapView().getTroopCount(attackingTerritory)}')
 
                             # if the defending territory still has troops
                             if (player.getTroopCount(defendingTerritory) > 0):
@@ -158,7 +155,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                                     if (inp1.lower() == "no"):
                                         continueAttacking = False
                                     else:
-                                        # checks if a battle occured
+                                        # checks if the battle wasy succefull
                                         if (player.battle(attackingTerritory, defendingTerritory, diceAmount)):
                                             # checks if the troop count of the defender has hit 0
                                             if (player.getTroopCount(defendingTerritory) > 0):
@@ -194,9 +191,18 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                     quitButton = False
                     while quitButton == False:
                         print("Type no to end this phase")
-                        movingTerritory = 'What territory would you like to take troops from?'
-                        amountOfTroops = 'How many troops would you like to move?'
-                        receivingTerritory = 'Which territory would you like to move these Troops?'
+                        movingTerritory = input('What territory would you like to take troops from?: ')
+                        if movingTerritory.lower() == 'no':
+                            break
+
+                        amountOfTroops = input('How many troops would you like to move?: ')
+                        if amountOfTroops.lower() == 'no':
+                            break
+
+                        receivingTerritory = input('Which territory would you like to move these Troops?')
+                        if receivingTerritory.lower() == 'no':
+                            break
+
                         if ((movingTerritory.lower() == "no") == False or (amountOfTroops.lower() == "no") == False or (receivingTerritory.lower() == "no") == False):
                             amountOfTroops = int(amountOfTroops)
                             if (player.moveTroops()):

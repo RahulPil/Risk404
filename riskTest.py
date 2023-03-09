@@ -59,7 +59,15 @@ def main():
         print(f'The main Map\n {p1.mapView.getMap()}')
 
     if testNumber == 4:
+        print("The actual map view")
+        print(p1.mapView.getMap())
+        
+        
+        print("\n\n\n Player View")
         p1.printTroopTerritories()
+
+        print("\n\n\n COMBAT VIEW")
+        p1.printCombatView()
 
 if __name__ == "__main__":
     main()

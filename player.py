@@ -158,4 +158,20 @@ class Player:
         print('Territory Name: TroopCount')
         for terrBlock in listOfTerr:
             print(f'{terrBlock[0]}: {terrBlock[1]}')
+    
+    # prints the list of territories the player doesn't own, with the ways 
+    # it can be invaded, w/ the troup counts on said terirotires
+    def printCombatView(self):
+        listOfNoneTerritories = self.mapView.getNoneTerritoryList(self.id)
+        print("Combat View")
+        for territory in listOfNoneTerritories:
+            # gets the territories that border that territory, that the player owns
+            # also includes the troop amount on that territory
+            borderTerritories = self.mapView.gameMap.get(territory)
+            ownedBorderedTerritories = []
+            for borderT in borderTerritories:
+                if  borderT in  self.listTerritories():
+                    territoryStats = f'{borderT} w/ {self.mapView.getTroopCount(borderT)} troops, '
+                    ownedBorderedTerritories.append(territoryStats)
+            print(f'{territory} ({self.mapView.getTroopCount(territory)} Troops) can be conquered through: {ownedBorderedTerritories}')
 
