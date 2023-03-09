@@ -37,10 +37,16 @@ class Player:
     # this methid encapsulates the getCountyTroopCount in the map.py object
     def getTroopTerritories(self):
         return self.mapView.getPlayerSoldierList(self.id)
+    
+    # checks if a territory is owned by a player
+    def isPlayerTerritory(self, terriotry):
+        return terriotry in self.listTerritories()
 
     # playes out a battle sequence
     def battle(self, attackTerritory, defendTerritory, diceAmount):
         # checks if the territory can be conquered
+        if (attackTerritory not in self.listTerritories() or defendTerritory not in self.mapView.getNoneTerritoryList(self.id)):
+            return False
         if (self.mapView.canBeAttacked(defendTerritory, self.id) == False or self.mapView.isBorder(attackTerritory, defendTerritory) == False):
             return False
         elif (self.mapView.getTroopCount(attackTerritory) < 2):
@@ -52,12 +58,19 @@ class Player:
 
     # once a player wins a battle they may conquer
     def conquer(self, attackTerritory, defendTerritory, amountOfTroopsToMove):
+        if (attackTerritory not in self.listTerritories() or defendTerritory not in self.mapView.getNoneTerritoryList(self.id)):
+            print("HERE0")
+            return False
+
         attackTerritoryTroopCount = self.mapView.getTroopCount(attackTerritory)
         if (amountOfTroopsToMove > attackTerritoryTroopCount):
+            print("HERE1")
             return False
         elif attackTerritoryTroopCount - amountOfTroopsToMove < 1:
+            print("HERE2")
             return False
-        elif self.mapView.listOfTerritories.get(defendTerritory)[1] != 0:
+        elif self.mapView.getTroopCount(defendTerritory) > 0:
+            print("HERE3")
             return False
 
         self.setTroops(attackTerritory,
@@ -128,6 +141,8 @@ class Player:
 
     # adds troops to a territory
     def addTroops(self, territoryName, amountOfTroops):
+        if (self.troopCount < amountOfTroops):
+            return False
         if (amountOfTroops < 0):
             self.troopCount = self.troopCount + amountOfTroops
         else :

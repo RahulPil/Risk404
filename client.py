@@ -4,6 +4,7 @@ import pickle
 import math
 from map import Map
 from player import Player
+import sys
 
 # Sources
 # https://www.geeksforgeeks.org/socket-programming-multi-threading-python/
@@ -20,11 +21,11 @@ def fixCountryInput(territory_name):
 # fixes the input of integer
 # the string value is the inter, the option is for which
 # method
-def fixIntegerInput(inputMethod):
-    value = (inputMethod())
+def fixIntegerInput(inputMethod, args):
+    value = inputMethod(args)
     while (value.isdigit() == False):
         print("Bad Integer")
-        value = (inputMethod())
+        value = (inputMethod(args))
     return value
 
 
@@ -43,12 +44,14 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                     subClient.close()
                     
             # send to server SERVER QUIT
-            serverSocket.send(("SERVER QUIT").encode())
+            serverSocket.send((f'SERVER QUIT: {gameID}').encode())
+            host_socket.close()
             beginServerConnection(serverSocket)
         return userInput
 
     # establishes the socket from which the other players will connect to
     host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     host_socket.bind((client_server_name, client_port_number))
     host_socket.listen(player_count)
     number_of_connections = 0
@@ -66,9 +69,8 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
     # this array will hold the socket information
     while number_of_connections < player_count:
         connectionSocket, addr = host_socket.accept()
-
+        
         username = serverSocket.recv(1024).decode()
-        print(username)
         clients[username] = connectionSocket
 
         print(f'Player {number_of_connections + 2}, also known as {username} has joined!')
@@ -85,12 +87,9 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
     playerArray[0] = Player("Host", 1, mainMap)
     playerArray[0].setTroopCount(troopPerPlayer)
 
-    print(len(clients))
-    print(len(playerArray))
-    #2
+    # allocates each player in array of players
     index = 1
     for key in clients:
-        print(index)
         playerArray[index] = Player(key, index + 1, mainMap)
         playerArray[index].setTroopCount(troopPerPlayer)
         index = index + 1
@@ -120,12 +119,14 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                 # this completes the placing troop proccess
                 while (player.troopCount > 0):
                     territory_name = fixCountryInput(userHostInput("Where do you want to place your troops?: "))
-                    soilder_amount = fixIntegerInput(userHostInput("How many troops?: "))
-                    soilder_amount = int(soilder_amount)
-                    if player.addTroops(territory_name, soilder_amount) == False:
-                        print("You can't place troops there")
-
-                    player.printTroopTerritories()
+                    if (player.isPlayerTerritory(territory_name) == False):
+                        print("Bad Country Name")
+                        continue
+                    soilder_amount = fixIntegerInput(userHostInput, "How many troops?: ")
+                    if (player.addTroops(territory_name, int(soilder_amount)) == False):
+                        print("Bad Troop count")
+                    else:
+                        player.printTroopTerritories()
 
                 # COMBAT PHASE
                 print("WELCOME CONQUERER!!!")
@@ -138,11 +139,11 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                     if defendingTerritory.lower() == "no":
                         break
 
-                    attackingTerritory = fixCountryInput(userHostInput("From which territroy would you like to conquer?: "))
+                    attackingTerritory = fixCountryInput(userHostInput("From which territory would you like to conquer?: "))
                     if attackingTerritory.lower() == "no":
                         break
                     
-                    diceAmount = fixIntegerInput(userHostInput("How many dice would you like to use, the most is 3, given that you have 3 or more troops on the attacking territory?: "))
+                    diceAmount = fixIntegerInput(userHostInput, "How many dice would you like to use, the most is 3, given that you have 3 or more troops on the attacking territory?: ")
                     if diceAmount.lower() == "no":
                         break
                     
@@ -155,11 +156,11 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                         # if the battle was succefull
                         if (player.battle(attackingTerritory, defendingTerritory, diceAmount)):
                             # print the stats about that territory, and their territory
-                            print(f'{defendingTerritory} TroopCount: {player.mapView().getTroopCount(defendingTerritory)}')
-                            print(f'{attackingTerritory} TroopCount: {player.mapView().getTroopCount(attackingTerritory)}')
+                            print(f'{defendingTerritory} TroopCount: {player.mapView.getTroopCount(defendingTerritory)}')
+                            print(f'{attackingTerritory} TroopCount: {player.mapView.getTroopCount(attackingTerritory)}')
 
                             # if the defending territory still has troops
-                            if (player.getTroopCount(defendingTerritory) > 0):
+                            if (player.mapView.getTroopCount(defendingTerritory) > 0):
 
                                 # the boolean indicating if if the the user wants to continue to attack the same teritory
                                 continueAttacking = True
@@ -171,18 +172,19 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                                         # checks if the battle wasy succefull
                                         if (player.battle(attackingTerritory, defendingTerritory, diceAmount)):
                                             # checks if the troop count of the defender has hit 0
-                                            if (player.getTroopCount(defendingTerritory) > 0):
-                                                print(f'{defendingTerritory} TroopCount: {player.mapView().getTroopCount(defendingTerritory)}')
-                                                print(f'{attackingTerritory} TroopCount: {player.mapView().getTroopCount(attackingTerritory)}')
+                                            if (player.mapView.getTroopCount(defendingTerritory) > 0):
+                                                print(f'{defendingTerritory} TroopCount: {player.mapView.getTroopCount(defendingTerritory)}')
+                                                print(f'{attackingTerritory} TroopCount: {player.mapView.getTroopCount(attackingTerritory)}')
                                             else:
                                                 # the terriotry can be conquered
                                                 print("You can conquer this territory!")
-                                                troupAmount = fixIntegerInput(userHostInput("How many troops would you like to move?: "))
+                                                print(f'Updated Troop Count: {attackingTerritory} TroopCount: {player.mapView.getTroopCount(attackingTerritory)}')
+                                                troupAmount = int(fixIntegerInput(userHostInput, "How many troops would you like to move?: "))
 
                                                 # loops until the user enters a valid amount of troops to send to the new territory
-                                                while (player.conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
+                                                while (player.conquer(attackingTerritory, defendingTerritory, int(troupAmount)) == False):
                                                     print("Enter a valid amount of troops")
-                                                    troupAmount = fixIntegerInput(userHostInput("How many troops would you like to move?: "))
+                                                    troupAmount = int(fixIntegerInput(userHostInput, "How many troops would you like to move?: "))
                                                 continueAttacking = False
                                         else:
                                             # the troop count has gone too low
@@ -190,10 +192,11 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                                             continueAttacking = False
                             else:
                                 print("You can conquer this territory!")
-                                troupAmount = fixIntegerInput(userHostInput("How many troops would you like to move?: "))
-                                while (player.conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
+                                print(f'Updated Troop Count: {attackingTerritory} TroopCount: {player.mapView.getTroopCount(attackingTerritory)}')
+                                troupAmount = int(fixIntegerInput(userHostInput, "How many troops would you like to move?: "))
+                                while (player.conquer(attackingTerritory, defendingTerritory, int(troupAmount) == False)):
                                     print("False troop movement amount")
-                                    troupAmount = fixIntegerInput(userHostInput("How many troops would you like to move?: "))
+                                    troupAmount = int(fixIntegerInput(userHostInput, "How many troops would you like to move?: "))
                         else:
                             print("This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
                 player.printTroopTerritories()
@@ -208,7 +211,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                         if movingTerritory.lower() == 'no':
                             break
 
-                        amountOfTroops = fixIntegerInput(userHostInput('How many troops would you like to move?: '))
+                        amountOfTroops = fixIntegerInput(userHostInput, 'How many troops would you like to move?: ')
                         if amountOfTroops.lower() == 'no':
                             break
 
@@ -245,7 +248,7 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
 
                 # uses pickile to load map
                 playerData = pickle.loads(badPlayerData)
-
+                print(f'CHECKING HOST PICKILE RECEIV VALUE: {isinstance(playerData, Player)}')
                 if (isinstance(playerData, Player)):
                     print("We got the player!")
                     # changes player array with new player, then updates main map
@@ -258,14 +261,12 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
                     for p2 in playerArray:
                         if (p2.id != 1):
                             subClient = clients[p2.name]
-                            subClient.send(("A user has Quit, will return to main screen shortly").encode())
-                            subClient.close()
-                        elif(p2.id == player.id):
-                            subClient = clients[p2.name]
-                            subClient.close()
-                    
+                            sendingPlayer = pickle.dumps(str("A user has Quit, will return to main screen shortly"))
+                            subClient.send(sendingPlayer)
+                            subClient.close()                    
                     # send to server SERVER QUIT
-                    serverSocket.send(("SERVER QUIT").encode())
+                    host_socket.close()
+                    serverSocket.send((f'SERVER QUIT: {gameID}').encode())
                     beginServerConnection(serverSocket)
 
     # If there is one winner, then all the territories will have the same
@@ -286,20 +287,24 @@ def gameHost(gameID, client_server_name, client_port_number, player_count, serve
             sendingPlayer = pickle.dumps(str("Congratulations Winner!"))
             subClient.send(sendingPlayer)
             subClient.close()
-    serverSocket.send(("SERVER QUIT").encode())
+    serverSocket.send((f'SERVER QUIT: {gameID}').encode())
+    host_socket.close()
     beginServerConnection(serverSocket)
 
 def gamePlayer(clientSocket : socket, serverSocket: socket):
     # idea from sources
     def userClientInput(msg):
         userInput = input(msg)
+        print(f'msg after input: {userInput}')
+        print(userInput=='SERVER QUIT')
         if userInput == "SERVER QUIT":
             # send quit msg, username, and wait until host response with confirmation
-            
+            print("HERE 55")
             sendingPlayer = pickle.dumps(str("SERVER QUIT"))
             clientSocket.send(sendingPlayer)
             clientSocket.close()
             serverSocket.send(("SERVER QUIT").encode())
+            beginServerConnection(serverSocket)
         return userInput
 
     # begins the client conenction to the Server
@@ -328,14 +333,15 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                     # this completes the placing troop proccess
                     while (playerData.troopCount > 0):
                         territory_name = fixCountryInput(userClientInput("Where do you want to place your troops?: "))
-                        soilder_amount = fixIntegerInput(userClientInput("How many troops?: "))
-                        if (soilder_amount.isdigit()):
-                            soilder_amount = int(soilder_amount)
-                            if playerData.addTroops(territory_name, soilder_amount) == False:
-                                print("You can't place troops there")
-                        else:
+                        print(territory_name)
+                        if (playerData.isPlayerTerritory(territory_name) == False):
+                            print("Bad Country Name")
+                            continue
+                        soilder_amount = fixIntegerInput(userClientInput, "How many troops?: ")
+                        if (playerData.addTroops(territory_name, int(soilder_amount)) == False):
                             print("Enter valid Troop count")
-                        playerData.printTroopTerritories()
+                        else:
+                            playerData.printTroopTerritories()
 
                     # COMBAT PHASE
                     print("WELCOME CONQUERER!!!")
@@ -352,7 +358,7 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                         if attackingTerritory.lower() == "no":
                             break
 
-                        diceAmount = fixIntegerInput(userClientInput("How many dice would you like to use, the most is 3, given that you have 3 or more troops on the attacking territory?: "))
+                        diceAmount = fixIntegerInput(userClientInput, "How many dice would you like to use, the most is 3, given that you have 3 or more troops on the attacking territory?: ")
                         if diceAmount.lower() == "no":
                             break
                         
@@ -365,11 +371,11 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                             # if the battle was succefull
                             if (playerData.battle(attackingTerritory, defendingTerritory, diceAmount)):
                                 # print the stats about that territory, and their territory
-                                print(f'{defendingTerritory} TroopCount: {playerData.mapView().getTroopCount(defendingTerritory)}')
-                                print(f'{attackingTerritory} TroopCount: {playerData.mapView().getTroopCount(attackingTerritory)}')
+                                print(f'{defendingTerritory} TroopCount: {playerData.mapView.getTroopCount(defendingTerritory)}')
+                                print(f'{attackingTerritory} TroopCount: {playerData.mapView.getTroopCount(attackingTerritory)}')
 
                                 # if the defending territory still has troops
-                                if (playerData.getTroopCount(defendingTerritory) > 0):
+                                if (playerData.mapView.getTroopCount(defendingTerritory) > 0):
 
                                     # the boolean indicating if if the the user wants to continue to attack the same teritory
                                     continueAttacking = True
@@ -381,18 +387,19 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                                             # checks if the battle wasy succefull
                                             if (playerData.battle(attackingTerritory, defendingTerritory, diceAmount)):
                                                 # checks if the troop count of the defender has hit 0
-                                                if (playerData.getTroopCount(defendingTerritory) > 0):
-                                                    print(f'{defendingTerritory} TroopCount: {playerData.mapView().getTroopCount(defendingTerritory)}')
-                                                    print(f'{attackingTerritory} TroopCount: {playerData.mapView().getTroopCount(attackingTerritory)}')
+                                                if (playerData.mapView.getTroopCount(defendingTerritory) > 0):
+                                                    print(f'{defendingTerritory} TroopCount: {playerData.mapView.getTroopCount(defendingTerritory)}')
+                                                    print(f'{attackingTerritory} TroopCount: {playerData.mapView.getTroopCount(attackingTerritory)}')
                                                 else:
                                                     # the terriotry can be conquered
                                                     print("You can conquer this territory!")
-                                                    troupAmount = fixIntegerInput(userClientInput("How many troops would you like to move?: "))
+                                                    print(f'Updated Troop Count: {attackingTerritory} TroopCount: {playerData.mapView.getTroopCount(attackingTerritory)}')
+                                                    troupAmount = int(fixIntegerInput(userClientInput, "How many troops would you like to move?: "))
 
                                                     # loops until the user enters a valid amount of troops to send to the new territory
                                                     while (playerData.conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
                                                         print("Enter a valid amount of troops")
-                                                        troupAmount = fixIntegerInput(userClientInput("How many troops would you like to move?: "))
+                                                        troupAmount = int(fixIntegerInput(userClientInput, "How many troops would you like to move?: "))
                                                     continueAttacking = False
                                             else:
                                                 # the troop count has gone too low
@@ -400,10 +407,11 @@ def gamePlayer(clientSocket : socket, serverSocket: socket):
                                                 continueAttacking = False
                                 else:
                                     print("You can conquer this territory!")
-                                    troupAmount = fixIntegerInput(userClientInput("How many troops would you like to move?: "))
+                                    print(f'Updated Troop Count: {attackingTerritory} TroopCount: {playerData.mapView.getTroopCount(attackingTerritory)}')
+                                    troupAmount = int(fixIntegerInput(userClientInput, "How many troops would you like to move?: "))
                                     while (playerData.conquer(attackingTerritory, defendingTerritory, troupAmount) == False):
                                         print("False troop movement amount")
-                                        troupAmount = fixIntegerInput(userClientInput("How many troops would you like to move?: "))
+                                        troupAmount = int(fixIntegerInput(userClientInput, "How many troops would you like to move?: "))
                             else:
                                 print("This battle cannot happen, either because of too few troops, or the selected territory isn't bordering yours")
                     playerData.printTroopTerritories()
@@ -457,25 +465,30 @@ def beginServerConnection(serverSocket):
         data = serverSocket.recv(1024)
         dataDecoded = data.decode()
         print(dataDecoded)
-        if "username:" in dataDecoded:
+        if "username:" in dataDecoded or "Username" in dataDecoded:
             clientUsername = input('Username: ')
             serverSocket.send(clientUsername.encode())
-        elif "Game Host:" not in dataDecoded and "Valid game sessions:" not in dataDecoded and "username:" not in dataDecoded:
-            clientChoise = input('Option: ')
+        
+        elif "valid game session" in dataDecoded:
+            client_game_sess = input('Game Session: ')
+            serverSocket.send(client_game_sess.encode())
+        elif "no current" in dataDecoded:
+            continue
 
-            if (clientChoise.lower() == 'exit'):
-                serverSocket.close()
-                #potential shit
-                serverSocket.send(("3").encode())
-                exit(0)
+        elif "Game Host:" not in dataDecoded and "Valid game sessions:" not in dataDecoded and "username:" not in dataDecoded and "Username" not in dataDecoded:
+            clientChoise = input('Option: ')
+            #reslicinece towards invalid inputs
 
             serverSocket.send(clientChoise.encode())
+
+            if (clientChoise == '3'):
+                serverSocket.close()
+                sys.exit()
         else:
             run = False
 
     # if the client wants to host the game
     if ("Game Host:" in dataDecoded):
-        print('inside game host if statement')
         # regex for the gameID
         gameID = re.search("[0-9]+", dataDecoded)
         gameID = gameID.group()
@@ -484,8 +497,8 @@ def beginServerConnection(serverSocket):
         # get game information from host
         client_server_name = input("What is your server's name?: ")
         client_port_number = input("What is your port number?: ")
-        player_count = fixIntegerInput(input("How many players, excluding yourself?: "))
-
+        player_count = fixIntegerInput(input, "How many players, excluding yourself?: ")
+        
         serverSocket.send(client_server_name.encode())
         serverSocket.send(client_port_number.encode())
         
@@ -501,8 +514,23 @@ def beginServerConnection(serverSocket):
         serverSocket.send(input("What session would you like to join?: ").encode())
 
         # receives the connectection from the ID
+        check = True
         data = serverSocket.recv(4096)
+
+        while check:
+            if "Please choose a" in data.decode():
+                print(data.decode())
+                serverSocket.send(input("What session would you like to join?: ").encode())
+                data = serverSocket.recv(4096)
+                print(type(data.decode()))
+            elif "Thank you" in data.decode():
+                data = serverSocket.recv(4096)
+                check = False
+            else:
+                check = False
+        
         host_socket = pickle.loads(data)
+
 
         # extracts information from the host_socket and connect to it
         hostSocketInteraction = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
